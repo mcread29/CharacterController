@@ -1,4 +1,4 @@
-# Pretty Goog Character Controller
+# Pretty Good Character Controller
 
 Simple overview of use/purpose.
 
