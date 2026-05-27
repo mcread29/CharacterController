@@ -1,7 +1,5 @@
 # Pretty Good Character Controller
 
-Simple overview of use/purpose.
-
 ## Description
 
 This is a character controller for Unity that covers many edge cases where the built in character controller may fail.
