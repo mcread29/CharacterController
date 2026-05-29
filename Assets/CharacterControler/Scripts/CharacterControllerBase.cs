@@ -229,8 +229,8 @@ public class CharacterControllerBase : MonoBehaviour
     // Update is called once per frame
     void Update() {
 	    float dTime = Time.deltaTime;
-	    //GetInputs(dTime);
 	    if (!PhysicsManager.s_characterUseFixedUpdate) {
+		    thisRigidbody.interpolation = RigidbodyInterpolation.None;
 		    WorldMovement(dTime, false);
 		    CheckGround(dTime, false);
 		    Movement(dTime, false);
@@ -240,6 +240,11 @@ public class CharacterControllerBase : MonoBehaviour
 
     void FixedUpdate() {
 	    if (PhysicsManager.s_characterUseFixedUpdate) {
+		    if (PhysicsManager.s_simulationMode == SimulationMode.FixedUpdate) {
+			    thisRigidbody.interpolation = RigidbodyInterpolation.Interpolate;
+		    } else {
+			    thisRigidbody.interpolation = RigidbodyInterpolation.None;
+		    }
 		    float dTime = Time.fixedDeltaTime;
 		    WorldMovement(dTime, true);
 		    CheckGround(dTime, true);

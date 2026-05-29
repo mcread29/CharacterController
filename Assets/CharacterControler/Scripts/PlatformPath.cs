@@ -31,9 +31,9 @@ public class PlatformPath : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start() {
         
-        transform.position = startNode.transform.position;
         currentNode = startNode;
         
+        transform.position = currentNode.transform.position;
         transform.rotation = Quaternion.LookRotation(currentNode.transform.position - currentNode.nextNode.transform.position);
         
         pathPosition = transform.position;
@@ -41,7 +41,12 @@ public class PlatformPath : MonoBehaviour
         
         targetPosition = transform.position;
         targetRotation = transform.rotation;
-
+        
+        thisRigidbody.position = transform.position;
+        thisRigidbody.rotation = transform.rotation;
+        thisRigidbody.angularVelocity = Vector3.zero;
+        thisRigidbody.linearVelocity = Vector3.zero;
+ 
     }
     
     void Update() {

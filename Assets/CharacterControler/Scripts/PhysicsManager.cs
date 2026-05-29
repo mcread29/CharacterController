@@ -6,6 +6,7 @@ public class PhysicsManager : MonoBehaviour
 
     [Tooltip("Set The simulation mode")]
     public SimulationMode simulationMode = SimulationMode.Script;
+    public static SimulationMode s_simulationMode = SimulationMode.Script;
     
     [Tooltip("Should the platforms use fixed update")]
     public bool platformsUseFixedUpdate = false;
@@ -49,6 +50,7 @@ public class PhysicsManager : MonoBehaviour
         
         s_platformsUseFixedUpdate = platformsUseFixedUpdate;
         s_characterUseFixedUpdate = characterUseFixedUpdate;
+        s_simulationMode = simulationMode;
 
         if (Physics.simulationMode != simulationMode) Physics.simulationMode = simulationMode;
 
