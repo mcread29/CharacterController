@@ -313,6 +313,12 @@ public class CharacterControllerBase : MonoBehaviour
 	
     public void WorldMovement(float dTime, bool fixedUpdate) {
 	    
+	    if (parentHelper == null) {
+		    worldVelocity = Vector3.zero;
+		    ResetParent(fixedUpdate);
+		    return;
+	    }
+	    
     	if (parentHelper.parent == null) {
 		    worldVelocity = Vector3.zero;
 		    ResetParent(fixedUpdate);
@@ -589,9 +595,7 @@ public class CharacterControllerBase : MonoBehaviour
 		thisRigidbody.linearVelocity = velocity;
 
 	}
-    
-	RaycastHit[] nonAllocHits = new RaycastHit[100];
-    
+
     // Clips the velocity against the world.  This is helpful when using concave colliders or when your time step gets high.
 	Vector3 ClipVelocity(Vector3 thisVelocity, float dTime) {
 

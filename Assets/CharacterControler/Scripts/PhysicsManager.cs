@@ -54,25 +54,22 @@ public class PhysicsManager : MonoBehaviour
 
         if (simulationMode != SimulationMode.Script) return;
         
+        // Sync transforms
+        Physics.SyncTransforms();
         
-        if (Physics.simulationMode == SimulationMode.Script) {
-            // Sync transforms
-            Physics.SyncTransforms();
-            
-            // If we go over the max timeStep divide the time steps evenly
-            // this will be a more stable simulation but can also lower FPS even more
-            int timeSteps = Mathf.CeilToInt(Time.deltaTime / maxTimeStep);
-            
-            // Cap the maximum number of time slices
-            if (timeSteps > maxStepSlices) timeSteps = maxStepSlices;
-            float dTime = Time.deltaTime / timeSteps;
-            
-            // Slow down time if the max time step is exceeded
-            if (allowSlowDown) dTime = Mathf.Min(dTime, maxTimeStep);
-            for (int i = 0; i < timeSteps; i++) {
-                Physics.Simulate(dTime);
-            }
-            
+        // If we go over the max timeStep divide the time steps evenly
+        // this will be a more stable simulation but can also lower FPS even more
+        int timeSteps = Mathf.CeilToInt(Time.deltaTime / maxTimeStep);
+        
+        // Cap the maximum number of time slices
+        if (timeSteps > maxStepSlices) timeSteps = maxStepSlices;
+        float dTime = Time.deltaTime / timeSteps;
+        
+        // Slow down time if the max time step is exceeded
+        if (allowSlowDown) dTime = Mathf.Min(dTime, maxTimeStep);
+        for (int i = 0; i < timeSteps; i++) {
+            Physics.Simulate(dTime);
         }
+
     }
 }

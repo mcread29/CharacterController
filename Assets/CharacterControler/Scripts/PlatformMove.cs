@@ -39,6 +39,7 @@ public class PlatformMove : MonoBehaviour
     void SetPosition(bool fixedDeltaTime, Vector3 newPosition) {
         if (fixedDeltaTime) {
             if (thisRigidbody != null) {
+                if (transform.parent != null) newPosition = transform.parent.InverseTransformPoint(newPosition);
                 thisRigidbody.MovePosition(newPosition);
             } else {
                 transform.localPosition = newPosition;
