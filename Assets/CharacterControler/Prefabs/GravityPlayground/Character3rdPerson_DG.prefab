@@ -99,7 +99,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2811166276009076236}
-  - component: {fileID: 3792920754886131315}
+  - component: {fileID: 5148336528070377978}
   m_Layer: 2
   m_Name: Visuals
   m_TagString: Untagged
@@ -124,7 +124,7 @@ Transform:
   - {fileID: 145767327237957771}
   m_Father: {fileID: 8400678781422481979}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &3792920754886131315
+--- !u!114 &5148336528070377978
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -136,7 +136,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e004ffdfe6bea724f8e3570688c7938b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Visuals3rdPerson
-  characterController: {fileID: 1069249577682921497}
+  characterController: {fileID: 3490717535750469850}
 --- !u!1 &4645709072101050406
 GameObject:
   m_ObjectHideFlags: 0
@@ -328,12 +328,14 @@ GameObject:
   - component: {fileID: 8400678781422481979}
   - component: {fileID: 744732990119286125}
   - component: {fileID: 3313985376056640330}
-  - component: {fileID: 1069249577682921497}
-  - component: {fileID: 3050899096278669573}
+  - component: {fileID: 3490717535750469850}
+  - component: {fileID: 8863571069930498607}
   - component: {fileID: 7784019060556724160}
   - component: {fileID: 7998573304487499928}
+  - component: {fileID: 6822109543199345554}
+  - component: {fileID: 1226427503515232060}
   m_Layer: 2
-  m_Name: Character3rdPerson
+  m_Name: Character3rdPerson_DG
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -406,7 +408,7 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 112
   m_CollisionDetection: 0
---- !u!114 &1069249577682921497
+--- !u!114 &3490717535750469850
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -419,20 +421,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CharacterControllerBase
   visuals: {fileID: 2745714151183111075}
-  visualsOffsetThreshold: 0.01
+  visualsOffsetThreshold: 0.1
   maxVisualsOffset: 0.5
   visualsLerpFactor: 20
   showDebugVisuals: 1
   debugVisuals: {fileID: 4645709072101050406}
   applyWorldRotation: 1
-  velocityClipThreshold: 0.5
+  velocityClipThreshold: 0.1
   groundCollisionType: 1
   characterHeight: 2
   characterRadius: 0.5
   stepHeight: 0.25
   floorFudge: 0.125
   minSlope: 30
-  maxSlope: 50
+  maxSlope: 60
   maxWalkSpeed: 10
   maxRunSpeed: 10
   airDrag: 1
@@ -470,13 +472,15 @@ MonoBehaviour:
   jumpCoolDownTime: 0.1
   footstepDistance: 3
   coyoteTime: 0.1
-  gravityDirection: {x: 0, y: -1, z: 0}
+  gravity: 9.8
   gravityMultiply: 2
+  allowGravityDirectionChange: 1
+  gravityDirection: {x: 0, y: -1, z: 0}
   worldMask:
     serializedVersion: 2
     m_Bits: 1
   characterAudio: {fileID: 7784019060556724160}
---- !u!114 &3050899096278669573
+--- !u!114 &8863571069930498607
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -485,10 +489,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 8703085213949573864}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9c41d5f6042da14409aa9036ab8b655b, type: 3}
+  m_Script: {fileID: 11500000, guid: aa825331cc803834f812cb51edf33769, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CharacterInput3rdPerson
-  characterController: {fileID: 1069249577682921497}
+  m_EditorClassIdentifier: Assembly-CSharp::CharacterInput3rdPersonDynamicGravity
+  characterController: {fileID: 3490717535750469850}
   cameraFollow: {fileID: 0}
 --- !u!114 &7784019060556724160
 MonoBehaviour:
@@ -626,3 +630,40 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &6822109543199345554
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8703085213949573864}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9568542dbc0b1a54d9873bf2a29999af, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GravityVolumeDetector
+  characterController: {fileID: 3490717535750469850}
+  defaultGravityDirection: {x: 0, y: -1, z: 0}
+--- !u!114 &1226427503515232060
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8703085213949573864}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e0c135b8443e1046b12b7f4836def48, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GravityBySurfaceProximity
+  characterController: {fileID: 3490717535750469850}
+  defaultGravityDirection: {x: 0, y: -1, z: 0}
+  samples: 16
+  startOffset: 1
+  minDistance: 1
+  maxDistance: 5
+  dirBias: 0.3
+  lerpSpeed: 10
+  layerMask:
+    serializedVersion: 2
+    m_Bits: 1

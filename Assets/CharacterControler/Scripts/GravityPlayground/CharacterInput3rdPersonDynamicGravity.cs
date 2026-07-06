@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 [DefaultExecutionOrder(-1)]
-public class CharacterInput3rdPerson : MonoBehaviour
+public class CharacterInput3rdPersonDynamicGravity : MonoBehaviour
 {
     public CharacterControllerBase characterController;
     public CameraFollow cameraFollow;
@@ -77,16 +77,26 @@ public class CharacterInput3rdPerson : MonoBehaviour
         Vector2 localInput = GetMoveVector();
         Vector3 worldInput = Vector3.zero;
 
+        Vector3 characterUp = characterController.transform.up;
+        Vector3 dirToCharacter = (characterController.transform.position - cameraFollow.transform.position).normalized;
+        
+        //float forwardDot = Vector3.Dot(dirToCharacter, cameraFollow.transform.forward);
+        //Vector3 camForward = Vector3.Lerp(cameraFollow.transform.forward, cameraFollow.transform.up, forwardDot).normalized;
+        //Vector3 worldForward = (camForward - characterUp * Vector3.Dot(camForward, characterUp)).normalized;
+        
+        //float rightDot = Vector3.Dot(dirToCharacter, cameraFollow.transform.right);
+        //Vector3 camRight = Vector3.Lerp(cameraFollow.transform.right, cameraFollow.transform.forward, rightDot).normalized;
+        //Vector3 worldRight = (camRight - characterUp * Vector3.Dot(camRight, characterUp)).normalized;
+
+
+        Vector3 camForward = cameraFollow.transform.forward;
+        Vector3 worldForward = (camForward - characterUp * Vector3.Dot(camForward, characterUp)).normalized;
+        
         Vector3 camRight = cameraFollow.transform.right;
-        camRight.y = 0f;
-        camRight.Normalize();
+        Vector3 worldRight = (camRight - characterUp * Vector3.Dot(camRight, characterUp)).normalized;
         
-        Vector3 camFarward = cameraFollow.transform.forward;
-        camFarward.y = 0f;
-        camFarward.Normalize();
-        
-        worldInput += camRight * localInput.x;
-        worldInput += camFarward * localInput.y;
+        worldInput += worldRight * localInput.x;
+        worldInput += worldForward * localInput.y;
         
         return worldInput;
     }

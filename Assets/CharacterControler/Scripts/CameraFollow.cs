@@ -10,12 +10,12 @@ public class CameraFollow : MonoBehaviour
     public float cameraYOffset = 5f;
     public float lerpSpeed = 5f;
     
-    Vector3 targetVelocity = Vector3.zero; 
-    Vector3 lookTarget = Vector3.zero;
-    Vector3 lastTargetPosition = Vector3.zero;
+    protected Vector3 targetVelocity = Vector3.zero; 
+    protected Vector3 lookTarget = Vector3.zero;
+    protected Vector3 lastTargetPosition = Vector3.zero;
     
-    Vector3 camPos = Vector3.zero; 
-    Vector3 lookVector = Vector3.zero;
+    protected Vector3 camPos = Vector3.zero; 
+    protected Vector3 lookVector = Vector3.zero;
     
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start() {
@@ -31,7 +31,7 @@ public class CameraFollow : MonoBehaviour
     }
 
     // Update is called once per frame
-    void LateUpdate() {
+    protected virtual void LateUpdate() {
         
         // look the camera up and down
         cameraYOffset = Mathf.Clamp(cameraYOffset - lookVector.y * Time.deltaTime * 5.0f, 0f, 10f);

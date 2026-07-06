@@ -26,6 +26,9 @@ public class PlatformPath : MonoBehaviour
     
     void Awake() {
         thisRigidbody = GetComponent<Rigidbody>();
+        if (thisRigidbody != null) {
+            thisRigidbody.interpolation = RigidbodyInterpolation.None;
+        }
     }
     
     // Start is called once before the first execution of Update after the MonoBehaviour is created

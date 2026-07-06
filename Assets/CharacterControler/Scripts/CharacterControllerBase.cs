@@ -2,137 +2,135 @@ using System;
 using UnityEngine;
 using UnityEngine.Serialization;
 using System.Collections.Generic;
-using NUnit.Framework.Constraints;
+
+
+public interface ICharacterControllerInput
+{
+	void InputJump(bool jumpWasPressedThisFrame, bool jumpIsPressed);
+	void InputMoveVector(Vector3 newMoveVector);
+	Vector3 GetMoveVector();
+}
 
 [RequireComponent(typeof(CapsuleCollider))]
 [RequireComponent(typeof(Rigidbody))]
 
 [DefaultExecutionOrder(1)]
-public class CharacterControllerBase : MonoBehaviour
+public class CharacterControllerBase : MonoBehaviour, ICharacterControllerInput
 {
 
 	[Header("Visuals")]
-	[SerializeField] GameObject visuals;
-	[SerializeField] float visualsOffsetThreshold = 0.1f;
-	[SerializeField] float maxVisualsOffset = 0.5f;
-	[SerializeField] float visualsLerpFactor = 20f;
+	[SerializeField] protected GameObject visuals;
+	[SerializeField] protected float visualsOffsetThreshold = 0.1f;
+	[SerializeField] protected float maxVisualsOffset = 0.5f;
+	[SerializeField] protected float visualsLerpFactor = 20f;
 	
 	[Header("Debug Ground")]
-	[SerializeField] bool showDebugVisuals = true;
-	[SerializeField] GameObject debugVisuals;
+	[SerializeField] protected bool showDebugVisuals = true;
+	[SerializeField] protected GameObject debugVisuals;
 	
-	[SerializeField] bool applyWorldRotation = true;
-	[SerializeField] float velocityClipThreshold = 0.1f;
+	[SerializeField] protected bool applyWorldRotation = true;
+	[SerializeField] protected float velocityClipThreshold = 0.1f;
 
-	enum GroundCollisionType {
+	protected enum GroundCollisionType {
 		HighestPoint,
 		AverageHeight,
 		Capsule
 	}
 	
-	[SerializeField] GroundCollisionType groundCollisionType = GroundCollisionType.AverageHeight;
+	[SerializeField] protected GroundCollisionType groundCollisionType = GroundCollisionType.AverageHeight;
 	
 	[Header("Character Size")]
-	[SerializeField] float characterHeight = 2.0f;
-	[SerializeField] float characterRadius = 0.5f;
-	[SerializeField] float stepHeight = 0.5f;
-	[SerializeField] float floorFudge = 0.1f;
+	[SerializeField] protected float characterHeight = 2.0f;
+	[SerializeField] protected float characterRadius = 0.5f;
+	[SerializeField] protected float stepHeight = 0.5f;
+	[SerializeField] protected float floorFudge = 0.1f;
 	
 	[Header("Slope Angles")]
-	[SerializeField] float minSlope = 30.0f;
-	[SerializeField] float maxSlope = 60.0f;
+	[SerializeField] protected float minSlope = 30.0f;
+	[SerializeField] protected float maxSlope = 60.0f;
 
 	[Header("Max Speeds")]
-	[SerializeField] float maxWalkSpeed = 10.0f;
-	[SerializeField] float maxRunSpeed = 10.0f;
+	[SerializeField] protected float maxWalkSpeed = 10.0f;
+	[SerializeField] protected float maxRunSpeed = 10.0f;
 
 	[Header("Drag for Air Movement and Falling")]
-	[SerializeField] float airDrag = 1.0f;
-	[SerializeField] float fallDrag = 0.25f;
+	[SerializeField] protected float airDrag = 1.0f;
+	[SerializeField] protected float fallDrag = 0.25f;
 
 	[Header("Acceleration for Ground and Air")]
-	[SerializeField] float groundAcc = 7.0f;
-	[SerializeField] float airAcc = 2.0f;
+	[SerializeField] protected float groundAcc = 7.0f;
+	[SerializeField] protected float airAcc = 2.0f;
 
 	[Header("Jumping")] 
-	[SerializeField] bool useJumpCurve = false;
-	[SerializeField] float jumpTime = 0.5f;
-	float jumpTimer = 0.0f;
-	[SerializeField] AnimationCurve jumpCurve = AnimationCurve.EaseInOut(0.0f, 0.0f, 1.0f, 1.0f);
-	[SerializeField] float jumpCurveForce = 1.0f;
-	[SerializeField] float jumpSpeed = 7.0f;
-	[SerializeField] float jumpCoolDownTime = 0.1f;
-	[SerializeField] float footstepDistance = 3.0f;
+	[SerializeField] protected bool useJumpCurve = false;
+	[SerializeField] protected float jumpTime = 0.5f;
+	[SerializeField] protected AnimationCurve jumpCurve = AnimationCurve.EaseInOut(0.0f, 0.0f, 1.0f, 1.0f);
+	[SerializeField] protected float jumpCurveForce = 1.0f;
+	[SerializeField] protected float jumpSpeed = 7.0f;
+	[SerializeField] protected float jumpCoolDownTime = 0.1f;
+	[SerializeField] protected float footstepDistance = 3.0f;
 	
-	[SerializeField] float coyoteTime = 0.1f;
+	[SerializeField] protected float coyoteTime = 0.1f;
 
-	[Header("Add More Gravity")]
-	[SerializeField] float gravityMultiply = 1.0f;
+	[Header("Change Gravity")] 
+	[SerializeField] protected float gravity = 9.8f;
+	[SerializeField] protected float gravityMultiply = 1.0f;
+	[SerializeField] protected bool allowGravityDirectionChange = false;
+	[SerializeField] protected Vector3 gravityDirection = Vector3.down;
 	
-	[SerializeField] LayerMask worldMask;
+	[SerializeField] protected LayerMask worldMask;
 	
-	[SerializeField] CharacterAudio characterAudio;
+	[SerializeField] protected CharacterAudio characterAudio;
 
 	
 	// Cached variables
-	float capsuleCenterLower = 0f;
-	float capsuleCenterUpper = 0f;
-	float capsuleCenterMiddle = 0f;
-	float capsuleHeightInner = 0f;
-	float sphereCastRadiusInner = 0f;
-	float sphereCastRadiusThickness = 0f;
-	float sphereCastRadiusOuter = 0f;
+	protected float capsuleCenterLower = 0f;
+	protected float capsuleCenterUpper = 0f;
+	protected float capsuleHeightInner = 0f;
+	protected float sphereCastRadius = 0f;
+	protected float sphereCastThickness = 0f;
 	
-	Vector3[] verticalSamplePoints;
-	Vector3[] groundSamplePoints;
-	int[] groundSampleTris;
-	int groundSampleTriCount = 0;
+	protected Vector3[] groundSamplePoints;
+	protected int[] groundSampleTris;
+	protected int groundSampleTriCount = 0;
 
-	bool[] groundSampleHits;
-	Vector3[] groundSampleHitPoints;
+	protected bool[] groundSampleHits;
+	protected Vector3[] groundSampleHitPoints;
 
-	Transform parentHelper = null;
-	Vector3 parentHelperLastPos = Vector3.zero;
-	Rigidbody thisRigidbody = null;
-	CapsuleCollider thisCollider = null;
+	protected Transform parentHelper = null;
+	protected Rigidbody thisRigidbody = null;
+	protected CapsuleCollider thisCollider = null;
 	
 	// State variables
+	protected Vector3 velocity = Vector3.zero;
+	protected Vector3 groundNormal = Vector3.up;
+	protected Vector3 localGroundNormal = Vector3.up;
+	protected float groundHeight = 0f;
 	
-	Vector3 velocity = Vector3.zero;
-	Vector3 groundNormal = Vector3.up;
-	float groundHeight = 0f;
+	protected bool inGround = false;
+	protected bool inGroundPrev = false;
 	
-	bool inGround = false;
-	bool inGroundPrev = false;
+	protected bool touchingGround = false;
+	protected bool touchingGroundPrev = false;
+	protected bool grounded = false;
+	protected float airTime = 0f;
 	
-	bool touchingGround = false;
-	bool touchingGroundPrev = false;
-	bool grounded = false;
-	float airTime = 0f;
+	protected Vector3 moveVector = Vector3.zero;
+	protected bool inputJumpIsPressed = false;
 	
-	Vector3 moveVector = Vector3.zero;
-	bool inputJumpIsPressed = false;
+	protected bool inputJump = false;
+	protected float lastInputJump = 0f;
+	protected float jumpCoolDownTimer = 0.0f;
+	protected bool canDoubleJump = false;
+	protected bool jumping = false;
+	protected float jumpTimer = 0.0f;
 	
-	bool inputJump = false;
-	float lastInputJump = 0f;
-	float jumpCoolDownTimer = 0.0f;
-	bool canDoubleJump = false;
-	bool jumping = false;
-	
-	float footstepDistanceTraveled = 0f;
+	protected float footstepDistanceTraveled = 0f;
 
-	Vector3 worldVelocity = Vector3.zero;
-
-	[ContextMenu("Test Issue")]
-	public void TestIssue() {
-		transform.position = new Vector3(6f, 2f, 10f);
-		thisRigidbody.position = new Vector3(6f, 2f, 10f);
-		thisRigidbody.linearVelocity = new Vector3(-20f, -4f, 20f);
-		inGround = false;
-		touchingGround = false;
-		grounded = false;
-		SetParent(null, false);
-	}
+	protected Vector3 worldVelocity = Vector3.zero;
+	protected Vector3 parentHelperLastPos = Vector3.zero;
+	protected Vector3 parentHelperLastForward = Vector3.forward;
+	
 	
 	void OnValidate() {
 		thisCollider = transform.GetComponent<CapsuleCollider>();
@@ -148,23 +146,16 @@ public class CharacterControllerBase : MonoBehaviour
 
 		capsuleCenterLower = stepHeight + characterRadius;
 		capsuleCenterUpper = characterHeight - characterRadius;
-		capsuleCenterMiddle = (capsuleCenterLower + capsuleCenterUpper) * 0.5f;
 		capsuleHeightInner = capsuleCenterUpper - capsuleCenterLower;
 
-		sphereCastRadiusInner = characterRadius * 0.9f;
-		sphereCastRadiusOuter = characterRadius * 1.11111f;
+		sphereCastRadius = characterRadius * 0.9f;
 
-		sphereCastRadiusThickness = characterRadius - sphereCastRadiusInner;
+		sphereCastThickness = characterRadius - sphereCastRadius;
 	}
 	
 	void Awake() {
 		OnValidate();
 		SetParent(null, false);
-
-		verticalSamplePoints = new Vector3[3];
-		verticalSamplePoints[0] = new Vector3(0f, capsuleCenterLower, 0f);
-		verticalSamplePoints[1] = new Vector3(0f, capsuleCenterMiddle, 0f);
-		verticalSamplePoints[2] = new Vector3(0f, capsuleCenterUpper, 0f);
 		
 		groundSamplePoints = new Vector3[13];
 		groundSamplePoints[0] = new Vector3(0.0f, 0f, 1.0f);
@@ -181,14 +172,12 @@ public class CharacterControllerBase : MonoBehaviour
 		groundSamplePoints[11] = new Vector3(-0.5f, 0f, 0.0f);
 		groundSamplePoints[12] = new Vector3(0.0f, 0f, 0.0f);
 		
-		
 		groundSampleHits = new bool[13];
 		groundSampleHitPoints = new Vector3[13];
 		for (int i = 0; i < groundSamplePoints.Length; i++) {
-			groundSamplePoints[i] = groundSamplePoints[i] * sphereCastRadiusInner;
+			groundSamplePoints[i] = groundSamplePoints[i] * sphereCastRadius;
 			groundSampleHits[i] = false;
 			groundSampleHitPoints[i] = Vector3.zero;
-			//Debug.Log(groundSamplePoints[i]);
 		}
 
 		groundSampleTriCount = 16;
@@ -220,15 +209,11 @@ public class CharacterControllerBase : MonoBehaviour
 		tris.Add(c);
 	}
 	
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        
-    }
 
     // Update is called once per frame
     void Update() {
 	    float dTime = Time.deltaTime;
+	    UpdateRotationForGravity(dTime);
 	    if (!PhysicsManager.s_characterUseFixedUpdate) {
 		    thisRigidbody.interpolation = RigidbodyInterpolation.None;
 		    WorldMovement(dTime, false);
@@ -252,17 +237,37 @@ public class CharacterControllerBase : MonoBehaviour
 	    }
     }
 
-    private void FixVisualPosition(float dTime) {
+    protected virtual void UpdateRotationForGravity(float dTime) {
+	    if (!allowGravityDirectionChange) return;
+	    Debug.DrawLine(transform.position, transform.position - gravityDirection * 10f, Color.red);
+	    
+	    Vector3 localForward = Vector3.Cross(transform.right, -gravityDirection);
+	    Quaternion targetRotation = Quaternion.LookRotation(localForward, -gravityDirection);
+		
+	    transform.rotation = targetRotation;
+    }
+    
+    protected virtual void FixVisualPosition(float dTime) {
 	    Vector3 visualsPos = visuals.transform.localPosition;
 	    visualsPos.y -= visualsPos.y * dTime * visualsLerpFactor;
 	    visuals.transform.localPosition = visualsPos;
     }
+    
+    public void SetGravityDirection(Vector3 newGravityDirection) {
+	    if (!allowGravityDirectionChange) return;
+	    gravityDirection = newGravityDirection;
+    }
 
-    public void InputMoveVector(Vector3 newMoveVector) {
+    public void SetGravity(float newGravity) {
+	    if (!allowGravityDirectionChange) return;
+	    gravity = newGravity;
+    }
+
+    public virtual void InputMoveVector(Vector3 newMoveVector) {
 	    moveVector = newMoveVector;
     }
 
-    public Vector3 GetMoveVector() {
+    public virtual Vector3 GetMoveVector() {
 	    return moveVector;
     }
     
@@ -288,7 +293,7 @@ public class CharacterControllerBase : MonoBehaviour
 	    }
     }
     
-    private void SetParent(Transform parentTransform, bool fixedUpdate) {
+    protected void SetParent(Transform parentTransform, bool fixedUpdate) {
 
 	    if (parentHelper == null) {
 		    parentHelper = new GameObject("CC_Parent_Helper").transform;
@@ -299,7 +304,7 @@ public class CharacterControllerBase : MonoBehaviour
 
 	}
 
-	private void ResetParent(bool fixedUpdate) {
+	protected void ResetParent(bool fixedUpdate) {
 
 		if (fixedUpdate) {
 			parentHelper.position = thisRigidbody.position;
@@ -308,15 +313,16 @@ public class CharacterControllerBase : MonoBehaviour
 		}
 
 		parentHelper.localScale = Vector3.one;
-		parentHelper.rotation = Quaternion.identity;
+		parentHelper.rotation = transform.rotation;
 		parentHelperLastPos = parentHelper.position;
+		parentHelperLastForward = parentHelper.forward;
 	}
 	
 	//======================================//
 	//	add the movement from the parent	//
 	//======================================//
 	
-    public void WorldMovement(float dTime, bool fixedUpdate) {
+	protected virtual void WorldMovement(float dTime, bool fixedUpdate) {
 	    
 	    if (parentHelper == null) {
 		    worldVelocity = Vector3.zero;
@@ -330,12 +336,12 @@ public class CharacterControllerBase : MonoBehaviour
     		return;
     	}
 	    
-    	// Apply rotation to the visuals
+	    // Apply world rotation to the visuals in local space 
 	    if (applyWorldRotation) {
-		    Vector3 parentRotation = Quaternion.LookRotation(parentHelper.forward).eulerAngles;
-		    Vector3 baseRotation = visuals.transform.eulerAngles;
-		    baseRotation.y += parentRotation.y;
-		    visuals.transform.rotation = Quaternion.Euler(baseRotation);
+		    float deltaAngle = Vector3.SignedAngle(parentHelperLastForward, parentHelper.forward, parentHelper.up);
+		    Vector3 baseRotation = visuals.transform.localEulerAngles;
+		    baseRotation.y += deltaAngle;
+		    visuals.transform.localEulerAngles = baseRotation;
 	    }
 
 	    Vector3 parentMovement = parentHelper.position - parentHelperLastPos;
@@ -360,41 +366,32 @@ public class CharacterControllerBase : MonoBehaviour
 	    }
 
 	    Vector3 parentMovementDir = parentMovement.normalized;
-    	float parentMovementLen = parentMovement.magnitude;
+    	float parentMovementLength = parentMovement.magnitude;
 	    
     	// clip the movement against the world
 	    // this keeps moving platforms from moving the player through a wall
-    	Ray ray = new Ray();
-    	RaycastHit hit = new RaycastHit();
-    	for (int i = 0; i < verticalSamplePoints.Length; i++) {
-    		Vector3 newOrigin = transform.position + verticalSamplePoints[i];
-    		ray.origin = newOrigin;
-    		ray.direction = parentMovementDir;
-
-    		if (Physics.SphereCast(newOrigin, sphereCastRadiusInner, parentMovementDir, out hit, parentMovementLen + sphereCastRadiusThickness, worldMask, QueryTriggerInteraction.Ignore)) {
-			    parentMovementLen = hit.distance - sphereCastRadiusThickness;
-    		}
-
-    		if (parentMovementLen <= 0f) {
-    			parentMovementLen = 0f;
-    			break;
-    		}
-    	}
+	    // don't clip against non-kinematic rigid bodies
+	    Vector3 capsuleStart = transform.position + transform.up * capsuleCenterLower;
+	    Vector3 capsuleEnd = transform.position + transform.up * capsuleCenterUpper;
+	    
+	    RaycastHit[] hits = Physics.CapsuleCastAll(capsuleStart, capsuleEnd, sphereCastRadius, parentMovementDir, parentMovementLength + sphereCastThickness, worldMask, QueryTriggerInteraction.Ignore);
+	    if (GetClosestHitKinematic(hits, out RaycastHit closestHitKinematic, parentMovementLength + sphereCastThickness)) {
+		    parentMovementLength = closestHitKinematic.distance - sphereCastThickness;
+	    }
 	    
     	// apply the clipped movement
 	    if (fixedUpdate) {
-		    thisRigidbody.MovePosition(thisRigidbody.position + parentMovementDir * parentMovementLen);
+		    thisRigidbody.MovePosition(thisRigidbody.position + parentMovementDir * parentMovementLength);
 	    } else {
-		    transform.position += parentMovementDir * parentMovementLen;
-		    //thisRigidbody.position += parentMovementDir * parentMovementLen;
+		    transform.position += parentMovementDir * parentMovementLength;
 	    }
 
 	    ResetParent(fixedUpdate);
 
     }
 
-    private Vector3 AddGravity(Vector3 thisVelocity, float dTime) {
-	    thisVelocity.y -= 9.8f * gravityMultiply * dTime;
+	protected Vector3 AddGravity(Vector3 thisVelocity, float dTime) {
+	    thisVelocity += gravityDirection * (gravity * gravityMultiply * dTime);
 	    return thisVelocity;
     }
     
@@ -403,7 +400,7 @@ public class CharacterControllerBase : MonoBehaviour
     //	set the characters position above the ground	//
     //==================================================//
     
-    private void CheckGround(float dTime, bool fixedUpdate) {
+    protected virtual void CheckGround(float dTime, bool fixedUpdate) {
 
 	    // Get our current position
 		Vector3 currentPos = transform.position;
@@ -418,9 +415,8 @@ public class CharacterControllerBase : MonoBehaviour
 		inGround = false;
 			
 		Transform groundTransform = null;
-		groundNormal = Vector3.up;
-		groundHeight = currentPos.y;
-
+		groundNormal = -gravityDirection;
+		groundHeight = 0f;
 
 		int groundPoints = 0;
 		float groundHeightAvg = 0f;
@@ -428,17 +424,16 @@ public class CharacterControllerBase : MonoBehaviour
 		float highestPoint = -999999f;
 		
 		Ray ray = new Ray();
-		RaycastHit hit = new RaycastHit();
-		Vector3 rayOrigin = currentPos + Vector3.up * (stepHeight + characterRadius);
-		ray.direction = Vector3.down;
+		Vector3 rayOrigin = currentPos - gravityDirection * (stepHeight + characterRadius);
+		ray.direction = gravityDirection;
 		float rayGroundLength = (stepHeight * 4f) + characterRadius + floorFudge;
 		
 		for (int i = 0; i < groundSamplePoints.Length; i++) {
-			ray.origin = rayOrigin + groundSamplePoints[i];
-			if( Physics.Raycast(ray, out hit, rayGroundLength, worldMask, QueryTriggerInteraction.Ignore) ) {
+			ray.origin = rayOrigin + transform.right * groundSamplePoints[i].x + transform.forward * groundSamplePoints[i].z;
+			if( Physics.Raycast(ray, out RaycastHit hit, rayGroundLength, worldMask, QueryTriggerInteraction.Ignore) ) {
 				
 				// skip unwalkable slopes and let physics handle the slide
-				float groundAngle = Vector3.Angle(Vector3.up, hit.normal);
+				float groundAngle = Vector3.Angle(-gravityDirection, hit.normal);
 				if (groundAngle > maxSlope) {
 					groundSampleHits[i] = false;
 					groundSampleHitPoints[i] = Vector3.zero;
@@ -449,23 +444,30 @@ public class CharacterControllerBase : MonoBehaviour
 				groundSampleHits[i] = true;
 				groundSampleHitPoints[i] = hit.point;
 
+				Vector3 localPoint = Vector3.zero;
+				if (allowGravityDirectionChange) {
+					localPoint = transform.InverseTransformPoint(hit.point);
+				} else {
+					localPoint = hit.point - transform.position;
+				}
+
 				// accumulate ground normal for average normal fallback
 				// accumulate ground height for average height calculation
 				groundNormalAverage += hit.normal;
-				groundHeightAvg += hit.point.y;
+				groundHeightAvg += localPoint.y;
 				groundPoints++;
 				
 				Debug.DrawRay(ray.origin, ray.direction * hit.distance, Color.green);
 
 				// set the touching ground flag if the ground is close enough
-				if (hit.point.y >= currentPos.y - floorFudge) {
+				if (localPoint.y + floorFudge > 0f) {
 					touchingGround = true;
 				}
 				
 				// get the highest point to use as the parent
-				if (hit.point.y > highestPoint) {
+				if (localPoint.y > highestPoint) {
 					groundTransform = hit.transform;
-					highestPoint = hit.point.y;
+					highestPoint = localPoint.y;
 				}
 			} else {
 				// clear the samples if the ray didn't hit anything
@@ -483,26 +485,30 @@ public class CharacterControllerBase : MonoBehaviour
 		
 		// get the velocity
 		velocity = thisRigidbody.linearVelocity;
-		
+		Vector3 localVelocity = velocity;
+		if (allowGravityDirectionChange) {
+			localVelocity = transform.InverseTransformVector(velocity);
+		}
+
 		if (touchingGround) {
 
 			float desiredMovement = 0f;
 			
 			if (groundCollisionType == GroundCollisionType.HighestPoint) {
-				desiredMovement = highestPoint - currentPos.y;
+				desiredMovement = MathF.Max(highestPoint, 0f);
 			}
 			
 			if (groundCollisionType == GroundCollisionType.AverageHeight) {
-				desiredMovement = groundHeight - currentPos.y;
+				desiredMovement = MathF.Max(groundHeight, 0f);
 			}
 
 			if (groundCollisionType == GroundCollisionType.Capsule) {
-				ray.origin = currentPos + new Vector3(0f, capsuleCenterLower, 0f);
-				ray.direction = Vector3.down;
-				float rayRadius = sphereCastRadiusInner;
-				float rayLength = stepHeight + sphereCastRadiusOuter;
+				ray.origin = transform.position + transform.up * capsuleCenterLower;
+				ray.direction = gravityDirection;
+				float rayRadius = sphereCastRadius;
+				float rayLength = stepHeight + sphereCastThickness;
 			
-				if (Physics.SphereCast(ray, rayRadius, out hit, rayLength, worldMask, QueryTriggerInteraction.Ignore)) {
+				if (Physics.SphereCast(ray, rayRadius, out RaycastHit hit, rayLength, worldMask, QueryTriggerInteraction.Ignore)) {
 					Debug.DrawLine(ray.origin, ray.origin + ray.direction * hit.distance, Color.red);
 					desiredMovement = Mathf.Max(0.0f, rayLength - hit.distance);
 				} else {
@@ -512,25 +518,26 @@ public class CharacterControllerBase : MonoBehaviour
 			}
 
 			// calculate the ground normal based on raycasts
-			groundNormal = CalculateGroundNormal(groundNormal);
+			CalculateGroundNormal(groundNormal);
 			
-			// show the debug grounn visuals
-			DebugGroundVisuals(true, currentPos, groundNormal, groundHeight);
+			// show the debug ground visuals
+			DebugGroundVisuals(true, currentPos);
 			
 			// move rigid body if needed
 			if (desiredMovement > 0f) {
 
 				inGround = true;
+
+				ray.origin = transform.TransformPoint(new Vector3(0f, capsuleCenterLower, 0f));
+				ray.direction = -gravityDirection;
+				float rayRadius = sphereCastRadius;
+				float rayLength = capsuleHeightInner + desiredMovement + sphereCastThickness;
 				
-				ray.origin = currentPos + new Vector3(0f, capsuleCenterLower, 0f);
-				ray.direction = Vector3.up;
-				float rayRadius = sphereCastRadiusInner;
-				float rayLength = capsuleHeightInner + desiredMovement + sphereCastRadiusOuter;
-				
-				// make sure we are not obstructed and clip the movement
-				if (Physics.SphereCast(ray, rayRadius, out hit, rayLength, worldMask, QueryTriggerInteraction.Ignore)) {
-					Debug.DrawLine(ray.origin, ray.origin + ray.direction * hit.distance, Color.red);
-					float hitDif = rayLength - hit.distance;
+				// make sure we are not obstructed by a kinematic collider and clip the movement
+				RaycastHit[] hits = Physics.SphereCastAll(ray, rayRadius, rayLength, worldMask, QueryTriggerInteraction.Ignore);
+				if (GetClosestHitKinematic(hits, out RaycastHit closestHitKinematic, rayLength)) {
+					Debug.DrawLine(ray.origin, ray.origin + ray.direction * closestHitKinematic.distance, Color.red);
+					float hitDif = rayLength - closestHitKinematic.distance;
 					desiredMovement = Mathf.Max(0.0f, desiredMovement - hitDif);
 				} else {
 					Debug.DrawLine(ray.origin, ray.origin + ray.direction * rayLength, Color.green);
@@ -538,9 +545,9 @@ public class CharacterControllerBase : MonoBehaviour
 				
 				// move the character out of the ground
 				if (fixedUpdate) {
-					thisRigidbody.MovePosition(new Vector3(thisRigidbody.position.x, thisRigidbody.position.y + desiredMovement, thisRigidbody.position.z));
+					thisRigidbody.MovePosition(thisRigidbody.position + (-gravityDirection * desiredMovement));
 				} else {
-					transform.position = new Vector3(transform.position.x, transform.position.y + desiredMovement, transform.position.z);
+					transform.position = transform.position + (-gravityDirection * desiredMovement);
 				}
 				
 				// move the visuals down so it does not pop up, only do this if the distance exceeds the threshold
@@ -557,25 +564,40 @@ public class CharacterControllerBase : MonoBehaviour
 				// get the ridged body of what we are standing on
 				Rigidbody groundRigidbody = groundTransform?.GetComponent<Rigidbody>();
 				if (groundRigidbody != null) {
-					// push rigid bodies down when we walk on them
-					groundRigidbody.AddForceAtPosition(Vector3.down * (thisRigidbody.mass * 9.8f * gravityMultiply * dTime), currentPos, ForceMode.Impulse);
 
-					// add impact force if we just landed
-					if (!inGroundPrev && velocity.y < 0f) {
-						float impactForce = thisRigidbody.mass * -velocity.y;
-						groundRigidbody.AddForceAtPosition(Vector3.down * impactForce, currentPos, ForceMode.Impulse);
+					if (!groundRigidbody.isKinematic) {
+						// push rigid bodies down when we walk on them
+						groundRigidbody.AddForceAtPosition(gravityDirection * (thisRigidbody.mass * 9.8f * gravityMultiply * dTime), currentPos, ForceMode.Impulse);
+
+						// add impact force if we just landed
+						if (!inGroundPrev && localVelocity.y < 0f) {
+							
+							//Vector3 impactForce = gravityDirection * (thisRigidbody.mass * -localVelocity.y);
+							
+							// Account for rigid body's velocity
+							Vector3 pointVelocity = thisRigidbody.GetPointVelocity(currentPos);
+							float gravityDot = Mathf.Clamp01(Vector3.Dot(pointVelocity, gravityDirection));
+							Vector3 impactForce = gravityDirection * (thisRigidbody.mass * -localVelocity.y * gravityDot);
+							groundRigidbody.AddForceAtPosition(impactForce, currentPos, ForceMode.Impulse);
+						}
 					}
 				}
-
+				
 				// stop vertical velocity but let it slide up or down a slope if we are moving.
-				if (velocity.y < 0f && (velocity.x > 0.01f || velocity.x < -0.01f || velocity.z > 0.01f || velocity.z < -0.01f)) {
-					Vector3 groundCross = Vector3.Cross(groundNormal, velocity);
-					Vector3 groundMove = Vector3.Cross(groundCross, groundNormal);
-					velocity.y = Mathf.Max(groundMove.y, velocity.y);
+				if (localVelocity.y < 0f && (localVelocity.x > 0.01f || localVelocity.x < -0.01f || localVelocity.z > 0.01f || localVelocity.z < -0.01f)) {
+					Vector3 groundCross = Vector3.Cross(localGroundNormal, localVelocity);
+					Vector3 groundMove = Vector3.Cross(groundCross, localGroundNormal);
+					localVelocity.y = Mathf.Max(groundMove.y, localVelocity.y);
 				} else {
-					velocity.y = Mathf.Max(0f, velocity.y);
+					localVelocity.y = Mathf.Max(0f, localVelocity.y);
 				}
-
+				
+				if (allowGravityDirectionChange) {
+					// transform back to world velocity
+					velocity = transform.TransformVector(localVelocity);
+				} else {
+					velocity = localVelocity;
+				}
 			}
 			
 			// set the current parent
@@ -591,7 +613,7 @@ public class CharacterControllerBase : MonoBehaviour
 			SetParent(null, fixedUpdate);
 			
 			// hide the debug ground
-			DebugGroundVisuals(false, currentPos, groundNormal, groundHeight);
+			DebugGroundVisuals(false, currentPos);
 		}
 		
 		// always add gravity
@@ -600,70 +622,94 @@ public class CharacterControllerBase : MonoBehaviour
 		thisRigidbody.linearVelocity = velocity;
 
 	}
+    
+	protected bool GetClosestHitKinematic(RaycastHit[] hits, out RaycastHit closestHit, float maxDistance) {
+		closestHit = new RaycastHit { distance = maxDistance };
+		
+		bool hitSomething = false;
+		for (int j = 0; j < hits.Length; j++) {
 
-    // Clips the velocity against the world.  This is helpful when using concave colliders or when your time step gets high.
-	Vector3 ClipVelocity(Vector3 thisVelocity, float dTime) {
-
-		for (int i = 0; i < verticalSamplePoints.Length; i++) {
-
-			// get the distance we are traveling this frame
-			float velocityDist = thisVelocity.magnitude * dTime;
-
-			// if the distance we are traveling is low just return it.
-			if (velocityDist < velocityClipThreshold) return thisVelocity;
-
-			Vector3 newOrigin = transform.position + verticalSamplePoints[i];
-
-			if (PhysicsManager.s_characterUseFixedUpdate) {
-				RaycastHit[] hits = Physics.SphereCastAll(newOrigin, sphereCastRadiusInner, thisVelocity, velocityDist + sphereCastRadiusThickness, worldMask, QueryTriggerInteraction.Ignore);
-
-				float closestDist = velocityDist - sphereCastRadiusThickness;
-				bool hitSomething = false;
-
-				for (int j = 0; j < hits.Length; j++) {
-
-					RaycastHit hit = hits[j];
-					
-					//don't clip velocity against a dynamic rigid body
-					Rigidbody hitRb = hit.transform.GetComponent<Rigidbody>();
-					if (hitRb != null) {
-						if (!hitRb.isKinematic) continue;
-					}
-
-					if (hit.distance < closestDist) {
-						hitSomething = true;
-						closestDist = hit.distance;
-					}
-
-				}
-
-				if (hitSomething) {
-					thisVelocity *= (closestDist - sphereCastRadiusThickness) / velocityDist;
-					Debug.DrawLine(newOrigin, newOrigin + thisVelocity, Color.red, 5.0f);
-				}
-
-			} else{
-
-				if (Physics.SphereCast(newOrigin, sphereCastRadiusInner, thisVelocity, out RaycastHit hit, velocityDist + sphereCastRadiusThickness, worldMask, QueryTriggerInteraction.Ignore)) {
-					thisVelocity *= (hit.distance - sphereCastRadiusThickness) / velocityDist;
-					Debug.DrawLine(newOrigin, newOrigin + thisVelocity, Color.red, 5.0f);
-				}
-
+			RaycastHit hit = hits[j];
+		    
+			// don't count dynamic rigid bodies
+			Rigidbody hitRb = hit.transform.GetComponent<Rigidbody>();
+			if (hitRb != null) {
+				if (!hitRb.isKinematic) continue;
+			}
+		    
+			if (hit.distance < closestHit.distance) {
+				hitSomething = true;
+				closestHit = hit;
 			}
 
 		}
+
+		return hitSomething;
+	}
+	
+	protected bool GetClosestHitDynamic(RaycastHit[] hits, out RaycastHit closestHit, out Rigidbody closestRB, float maxDistance) {
+		closestHit = new RaycastHit { distance = maxDistance };
+		closestRB = null;
 		
-		return thisVelocity;
+		bool hitSomething = false;
+		for (int j = 0; j < hits.Length; j++) {
+
+			RaycastHit hit = hits[j];
+		    
+			// only count dynamic rigid bodies
+			Rigidbody hitRb = hit.transform.GetComponent<Rigidbody>();
+			if (hitRb == null) continue;
+			if (hitRb.isKinematic) continue;
+			
+			if (hit.distance < closestHit.distance) {
+				hitSomething = true;
+				closestHit = hit;
+				closestRB = hitRb;
+			}
+
+		}
+
+		return hitSomething;
+	}
+
+    // Clips the velocity against the world.  This is helpful when using concave colliders or when your time step gets high.
+    protected virtual Vector3 ClipVelocity(Vector3 thisVelocity, float dTime) {
+	    
+	    // the vector we will be traveling this time step
+	    Vector3 thisVelocityStep = thisVelocity * dTime;
+
+	    // get the distance we are traveling this frame
+	    float velocityDist = thisVelocityStep.magnitude;
+
+	    // if the distance we are traveling is low just return it.
+	    if (velocityDist < velocityClipThreshold) return thisVelocity;
+
+	    Vector3 capsuleStart = transform.position + transform.up * capsuleCenterLower;
+	    Vector3 capsuleEnd = transform.position + transform.up * capsuleCenterUpper;
+	    
+	    RaycastHit[] hits = Physics.CapsuleCastAll(capsuleStart, capsuleEnd, sphereCastRadius, thisVelocity, velocityDist + sphereCastThickness, worldMask, QueryTriggerInteraction.Ignore);
+	    
+	    if (GetClosestHitKinematic(hits, out RaycastHit closestHit, velocityDist - sphereCastThickness)) {
+		    float distFrac = (closestHit.distance - sphereCastThickness) / velocityDist;
+		    Vector3 vStep = thisVelocityStep * (1.0f - distFrac);
+		    vStep -= Vector3.Dot( vStep, closestHit.normal) * closestHit.normal; 
+					
+		    thisVelocityStep *= distFrac;
+		    thisVelocityStep += vStep;
+	    }
+	    
+	    return thisVelocityStep / dTime;
+	    
 	}
     
 	// a helpful math function like smooth step but linear
-	float LinearStep( float min, float max, float val ){
+	protected float LinearStep( float min, float max, float val ){
 		return Mathf.Clamp01( ( val - min ) * ( 1.0f / ( max - min ) ) );
 	}
 
 	// lowers the movement vector based on the slope
-	Vector3 InhibitMovementAgainstSlope(Vector3 thisMoveVector) {
-		float slopeMoveAngle = 90f - Vector3.Angle(-thisMoveVector.normalized, groundNormal);
+	protected Vector3 InhibitMovementAgainstSlope(Vector3 thisMoveVector, Vector3 thisGroundNormal) {
+		float slopeMoveAngle = 90f - Vector3.Angle(-thisMoveVector.normalized, thisGroundNormal);
 		float slopeMoveAngleMapped = LinearStep(minSlope, maxSlope, slopeMoveAngle);
 		thisMoveVector *= 1.0f - slopeMoveAngleMapped * slopeMoveAngleMapped;
 		return thisMoveVector;
@@ -671,10 +717,10 @@ public class CharacterControllerBase : MonoBehaviour
 
 	// conforms the movement vector to the slope
 	// this keeps the character from hopping down slopes and stairs
-	Vector3 ConformMovementAgainstSlope(Vector3 thisMoveVector) {
-		Vector3 groundCross = Vector3.Cross(groundNormal, thisMoveVector);
+	protected Vector3 ConformMovementAgainstSlope(Vector3 thisMoveVector, Vector3 thisGroundNormal) {
+		Vector3 groundCross = Vector3.Cross(thisGroundNormal, thisMoveVector);
 		if (groundCross.sqrMagnitude < 0.001f) return thisMoveVector;  // the ground is flat
-		Vector3 groundMove = Vector3.Cross(groundCross, groundNormal);
+		Vector3 groundMove = Vector3.Cross(groundCross, thisGroundNormal);
 		thisMoveVector = groundMove;
 				
 		// normalize the XY speed
@@ -684,7 +730,7 @@ public class CharacterControllerBase : MonoBehaviour
 		return thisMoveVector;
 	}
 
-	void SetGrounded() {
+	protected void SetGrounded() {
 		// play land sound
 		if (!grounded) MovementLand();
 			
@@ -704,11 +750,19 @@ public class CharacterControllerBase : MonoBehaviour
 	//==========================================//
 	//	all things player controlled movement.	//
 	//==========================================//
-
-	void Movement(float dTime, bool fixedUpdate) {
+	
+	protected virtual void Movement(float dTime, bool fixedUpdate) {
 		
-		// Get the current velocity of the rigid body
+		// Get the current velocity of the rigid body and move vector
 		velocity = thisRigidbody.linearVelocity;
+		Vector3 localVelocity = velocity;
+		Vector3 localMoveVector = moveVector;
+
+		// Transform to local space if needed
+		if (allowGravityDirectionChange) {
+			localVelocity = transform.InverseTransformVector(velocity);
+			localMoveVector = transform.InverseTransformVector(moveVector);
+		}
 		
 		if (touchingGround) {
 			// if we are jumping wait until we collide with the ground and the jump timer is done
@@ -736,8 +790,8 @@ public class CharacterControllerBase : MonoBehaviour
 		//==========================================//
 		
 		// velocityXZ is the game movement
-		Vector3 velocityXZ = velocity;
-		velocityXZ.y = 0;
+		Vector3 localVelocityXZ = localVelocity;
+		localVelocityXZ.y = 0f;
 
 		// set current max speed to walk speed
 		float currentMaxSpeed = maxRunSpeed;
@@ -745,90 +799,84 @@ public class CharacterControllerBase : MonoBehaviour
 		// apply movement input
 		if (touchingGround) {
 			
-			if (moveVector.sqrMagnitude > 0.01f) {
-				moveVector = InhibitMovementAgainstSlope(moveVector);
-				moveVector = ConformMovementAgainstSlope(moveVector);
-				Debug.DrawRay(transform.position, moveVector, Color.red);
+			if (localMoveVector.sqrMagnitude > 0.01f) {
+				localMoveVector = InhibitMovementAgainstSlope(localMoveVector, localGroundNormal);
+				localMoveVector = ConformMovementAgainstSlope(localMoveVector, localGroundNormal);
+				Debug.DrawRay(transform.position, localMoveVector, Color.red);
 			} else {
-				moveVector = Vector3.zero;
+				localMoveVector = Vector3.zero;
 			}
 
 			// use target velocity instead of drag and acceleration
-			Vector3 targetVelocity = moveVector * currentMaxSpeed;
+			Vector3 targetVelocity = localMoveVector * currentMaxSpeed;
 			targetVelocity.y = Mathf.Min(targetVelocity.y, 0f); // stop from hopping up ramps
-			targetVelocity.y += velocity.y; // add current velocity to stop hopping down ramps
-			velocity += (targetVelocity - velocity) * (groundAcc * dTime);
+			targetVelocity.y += localVelocity.y; // add current velocity to stop hopping down ramps
+			localVelocity += (targetVelocity - localVelocity) * (groundAcc * dTime);
 
 			// do footstep stuff
-			footstepDistanceTraveled += velocityXZ.magnitude * dTime;
+			footstepDistanceTraveled += localVelocityXZ.magnitude * dTime;
 			if (footstepDistanceTraveled >= footstepDistance) {
 				characterAudio?.PlayStep();
 				footstepDistanceTraveled = 0f;
 			}
 			
-			if (float.IsNaN(velocity.x) || float.IsNaN(velocity.y) || float.IsNaN(velocity.z)) {
-				Debug.LogError(velocity);
-			}
+			//if (float.IsNaN(localVelocity.x) || float.IsNaN(localVelocity.y) || float.IsNaN(localVelocity.z)) {
+			//	Debug.LogError(localVelocity);
+			//}
 
 		} else {
 
 			// acceleration in respect to current velocity
-			float vDot = Vector3.Dot(moveVector, velocityXZ);
-			float accDif = (moveVector.magnitude * currentMaxSpeed) - vDot;
+			float vDot = Vector3.Dot(localMoveVector, localVelocityXZ);
+			float accDif = (localMoveVector.magnitude * currentMaxSpeed) - vDot;
 
 			// add air drag
-			velocity -= velocityXZ * (airDrag * dTime);
+			localVelocity -= localVelocityXZ * (airDrag * dTime);
 			// add fall drag
-			velocity.y -= velocity.y * fallDrag * dTime;
+			localVelocity.y -= localVelocity.y * fallDrag * dTime;
 			// add movement
-			velocity += moveVector * (airAcc * accDif * dTime);
+			localVelocity += localMoveVector * (airAcc * accDif * dTime);
 			
 			// no footsteps in the air
 			footstepDistanceTraveled = 0f;
 			
-			if (float.IsNaN(velocity.x) || float.IsNaN(velocity.y) || float.IsNaN(velocity.z)) {
-				Debug.LogError(velocity);
-			}
 		}
 
+		if (allowGravityDirectionChange) {
+			// transform back to world velocity
+			velocity = transform.TransformVector(localVelocity);
+		} else {
+			velocity = localVelocity;
+		}
+		
 		// jumping
 		MovementJump(dTime); 
 		
-		if (float.IsNaN(velocity.x) || float.IsNaN(velocity.y) || float.IsNaN(velocity.z)) {
-			Debug.LogError(velocity);
-		}
-		
-		// clip velocity
+		// clip velocity against world if needed
 		velocity = ClipVelocity(velocity, dTime);
 		
-		if (float.IsNaN(velocity.x) || float.IsNaN(velocity.y) || float.IsNaN(velocity.z)) {
-			Debug.LogError(velocity);
-		} else {
-			// Update the Rigid Body velocity
-			thisRigidbody.linearVelocity = velocity;
-		}
-	
-
+		// Update the Rigid Body velocity
+		thisRigidbody.linearVelocity = velocity;
+		
 	}
 
-
-	private void MovementJump(float dTime) {
+	protected void MovementJump(float dTime) {
 		if (useJumpCurve) {
 			MovementJumpCurve(dTime);
 		} else {
 			MovementJumpInstant(dTime);
 		}
-		
 	}
 
-	private void MovementJumpInstant(float dTime) {
+	protected void MovementJumpInstant(float dTime) {
 		if (!inputJump) return;
 		
 		if (grounded) {
 			jumpCoolDownTimer = 0.1f;
 			grounded = false;
 			jumping = true;
-			velocity.y = jumpSpeed;
+			velocity -= Vector3.Dot(velocity, gravityDirection) * gravityDirection;
+			velocity -= gravityDirection * jumpSpeed;
 			characterAudio?.PlayJump();
 			return;
 		}
@@ -838,13 +886,14 @@ public class CharacterControllerBase : MonoBehaviour
 			grounded = false;
 			jumping = true;
 			canDoubleJump = false;
-			velocity.y = jumpSpeed;
+			velocity -= Vector3.Dot(velocity, gravityDirection) * gravityDirection;
+			velocity -= gravityDirection * jumpSpeed;
 			characterAudio?.PlayJump();
 			return;
 		}
 	}
 
-	private void MovementJumpCurve(float dTime) {
+	protected void MovementJumpCurve(float dTime) {
 		
 		if (jumping) {
 			if (!inputJumpIsPressed) {
@@ -861,8 +910,7 @@ public class CharacterControllerBase : MonoBehaviour
 			}
 			
 			float timeFraction = jumpTimer / jumpTime;
-			velocity.y += jumpCurve.Evaluate(timeFraction) * jumpCurveForce * dTime;
-			
+			velocity -= gravityDirection * (jumpCurve.Evaluate(timeFraction) * jumpCurveForce * dTime);
 			return;
 		}
 		
@@ -873,8 +921,9 @@ public class CharacterControllerBase : MonoBehaviour
 			jumpTimer = 0f;
 			grounded = false;
 			jumping = true;
-			
-			velocity.y = jumpSpeed;
+
+			velocity -= Vector3.Dot(velocity, gravityDirection) * gravityDirection;
+			velocity -= gravityDirection * jumpSpeed;
 			characterAudio.PlayJump();
 			return;
 		}
@@ -884,14 +933,15 @@ public class CharacterControllerBase : MonoBehaviour
 			grounded = false;
 			jumping = true;
 			canDoubleJump = false;
-			velocity.y = jumpSpeed;
+			velocity -= Vector3.Dot(velocity, gravityDirection) * gravityDirection;
+			velocity -= gravityDirection * jumpSpeed;
 			characterAudio?.PlayJump();
 			return;
 		}
 	}
 	
 
-	private void MovementLand() {
+	protected void MovementLand() {
 		// If we were in the air for more time play a land sound
 		// if we were in the air for less time play a step sound
 		// if we were not in the air for very long at all do not play a sound so sounds don't get spammed
@@ -902,7 +952,7 @@ public class CharacterControllerBase : MonoBehaviour
 		}
 	}
 
-	Vector3 CalculateGroundNormal(Vector3 groundNormal) {
+	protected virtual void CalculateGroundNormal(Vector3 defaultGroundNormal) {
 
 		int normalCount = 0;
 		Vector3 normals = Vector3.zero;
@@ -923,21 +973,27 @@ public class CharacterControllerBase : MonoBehaviour
 			Debug.DrawLine(point2, point0, Color.green);
 			
 			Vector3 newNormal = Vector3.Cross(point1 - point0, point2 - point0);
-			if (newNormal.sqrMagnitude == 0f) continue;
-			if (newNormal.y < 0f) newNormal = -newNormal;
+			//if( newNormal.sqrMagnitude == 0f ) continue;
+			//if( Vector3.Dot(newNormal, gravityDirection) > 0f ) newNormal = -newNormal;
 			newNormal.Normalize();
 			normals += newNormal;
 			normalCount++;
 		}
-		
-		if(normalCount == 0) return groundNormal;
-		
-		groundNormal = (normals / normalCount).normalized;
-		
-		return groundNormal;
+
+		if (normalCount == 0) {
+			groundNormal = defaultGroundNormal;
+		} else {
+			groundNormal = (normals / normalCount).normalized;
+		}
+
+		if (allowGravityDirectionChange) {
+			localGroundNormal = transform.InverseTransformDirection(groundNormal);
+		} else {
+			localGroundNormal = groundNormal;
+		}
 	}
 
-	private void DebugGroundVisuals(bool isActive, Vector3 debugPos, Vector3 groundNormal, float groundHeight) {
+	protected virtual void DebugGroundVisuals(bool isActive, Vector3 debugPos) {
 		if (!showDebugVisuals) {
 			if (debugVisuals.activeSelf) debugVisuals.SetActive(false);
 			return;
@@ -945,7 +1001,7 @@ public class CharacterControllerBase : MonoBehaviour
 		
 		debugVisuals.SetActive(isActive);
 		
-		debugPos.y = groundHeight;
+		debugPos -= gravityDirection * groundHeight;
 		debugVisuals.transform.position = debugPos;
 			
 		Quaternion debugRotation = Quaternion.LookRotation(groundNormal, transform.right);

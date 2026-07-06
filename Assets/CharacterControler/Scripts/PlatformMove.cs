@@ -17,15 +17,21 @@ public class PlatformMove : MonoBehaviour
     float lerpAmount = 0f;
     
     Rigidbody thisRigidbody;
+    Vector3 lastPosition;
+    
 
     void Awake() {
         thisRigidbody = GetComponent<Rigidbody>();
+        if (thisRigidbody != null) {
+            thisRigidbody.interpolation = RigidbodyInterpolation.None;
+        }
     }
     
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start() {
         startPosition = transform.localPosition;
         endPosition = transform.localPosition + movement;
+        lastPosition = startPosition;
     }
     
     void Update() {
@@ -36,7 +42,7 @@ public class PlatformMove : MonoBehaviour
         if( PhysicsManager.s_platformsUseFixedUpdate) UpdatePlatform(true, Time.fixedDeltaTime);
     }
 
-    void SetPosition(bool fixedDeltaTime, Vector3 newPosition) {
+    void SetPosition(bool fixedDeltaTime, float dTime, Vector3 newPosition) {
         if (fixedDeltaTime) {
             if (thisRigidbody != null) {
                 if (transform.parent != null) newPosition = transform.parent.InverseTransformPoint(newPosition);
@@ -51,12 +57,12 @@ public class PlatformMove : MonoBehaviour
 
     // Update is called once per frame
     void UpdatePlatform(bool fixedDeltaTime, float dTime) {
-
+        
         if (linearMovement) {
             
             if (stage == 0) {
                 lerpAmount += dTime * movementSpeed;
-                SetPosition(fixedDeltaTime, Vector3.Lerp(startPosition, endPosition, lerpAmount));
+                SetPosition(fixedDeltaTime, dTime, Vector3.Lerp(startPosition, endPosition, lerpAmount));
                 if (lerpAmount >= 1f) {
                     stage = 1;
                     lerpAmount = 0;
@@ -75,7 +81,7 @@ public class PlatformMove : MonoBehaviour
             
             if (stage == 2) {
                 lerpAmount += dTime * movementSpeed;
-                SetPosition(fixedDeltaTime, Vector3.Lerp(endPosition, startPosition, lerpAmount));
+                SetPosition(fixedDeltaTime, dTime, Vector3.Lerp(endPosition, startPosition, lerpAmount));
                 if (lerpAmount >= 1f) {
                     stage = 3;
                     lerpAmount = 0;
@@ -94,7 +100,7 @@ public class PlatformMove : MonoBehaviour
 
         } else {
             time += movementSpeed * dTime;
-            SetPosition(fixedDeltaTime, startPosition + movement * Mathf.Sin(time));
+            SetPosition(fixedDeltaTime, dTime, startPosition + movement * Mathf.Sin(time));
         }
     }
 

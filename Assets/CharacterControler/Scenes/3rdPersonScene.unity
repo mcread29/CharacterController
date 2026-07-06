@@ -819,56 +819,6 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 3349755920052815870, guid: cec47e6a8cb77a14ba355afcae15a24a, type: 3}
---- !u!1 &1048720406
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1048720408}
-  - component: {fileID: 1048720407}
-  m_Layer: 0
-  m_Name: PhysicsManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1048720407
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1048720406}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7e147f6c3e6db6a4ea15483a5b9a4c5c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PhysicsManager
-  simulationMode: 2
-  platformsUseFixedUpdate: 0
-  characterUseFixedUpdate: 0
-  maxTimeStep: 0.02
-  maxStepSlices: 2
-  allowSlowDown: 1
---- !u!4 &1048720408
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1048720406}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 16, y: 1.25737, z: 5.57257}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1090336837 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: -3731934960417540348, guid: cec47e6a8cb77a14ba355afcae15a24a, type: 3}
@@ -1953,6 +1903,63 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 8198457732338747994, guid: cec47e6a8cb77a14ba355afcae15a24a, type: 3}
+--- !u!1001 &1806991556
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 6422297449342261151, guid: 737f30db6b3ab054cadd59912c20e80c, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6422297449342261151, guid: 737f30db6b3ab054cadd59912c20e80c, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6422297449342261151, guid: 737f30db6b3ab054cadd59912c20e80c, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6422297449342261151, guid: 737f30db6b3ab054cadd59912c20e80c, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6422297449342261151, guid: 737f30db6b3ab054cadd59912c20e80c, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6422297449342261151, guid: 737f30db6b3ab054cadd59912c20e80c, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6422297449342261151, guid: 737f30db6b3ab054cadd59912c20e80c, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6422297449342261151, guid: 737f30db6b3ab054cadd59912c20e80c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6422297449342261151, guid: 737f30db6b3ab054cadd59912c20e80c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6422297449342261151, guid: 737f30db6b3ab054cadd59912c20e80c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6488038188692667727, guid: 737f30db6b3ab054cadd59912c20e80c, type: 3}
+      propertyPath: m_Name
+      value: PhysicsManager
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 737f30db6b3ab054cadd59912c20e80c, type: 3}
 --- !u!64 &1844512128
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -2165,6 +2172,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3192082011088362870, guid: 0320bb916605ac748a5a7d546976da0d, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 8942848864316274734, guid: 0320bb916605ac748a5a7d546976da0d, type: 3}
       propertyPath: m_Name
       value: DynamicWorld
@@ -2300,7 +2311,7 @@ PrefabInstance:
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 1048720408}
+  - {fileID: 1806991556}
   - {fileID: 410087041}
   - {fileID: 832575519}
   - {fileID: 7791108569458274500}

@@ -10,10 +10,13 @@ public class PlatformSpin : MonoBehaviour
 
     void Awake() {
         thisRigidbody = GetComponent<Rigidbody>();
+        if (thisRigidbody != null) {
+            thisRigidbody.interpolation = RigidbodyInterpolation.None;
+        }
     }
     
     void Start() {
-        currentRotation = transform.eulerAngles;
+        currentRotation = transform.localRotation.eulerAngles;
     }
 
     void Update() {

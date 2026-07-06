@@ -23,11 +23,17 @@ public class PlatformFloating : MonoBehaviour
     Rigidbody thisRigidbody;
     float randomValue = 0.0f;
     float time = 0.0f;
-    
+
+    void Awake() {
+        thisRigidbody = GetComponent<Rigidbody>();
+        if (thisRigidbody != null) {
+            thisRigidbody.interpolation = RigidbodyInterpolation.None;
+        }
+    }
     
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start() {
-        thisRigidbody = GetComponent<Rigidbody>();
+        
         
         startPosition = transform.position;
         startRotation = transform.rotation;

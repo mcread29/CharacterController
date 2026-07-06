@@ -8,6 +8,9 @@ public class PhysicsManager : MonoBehaviour
     public SimulationMode simulationMode = SimulationMode.Script;
     public static SimulationMode s_simulationMode = SimulationMode.Script;
     
+    [Tooltip("The Fixed Update Time that should be used when not using Script simulation mode")]
+    public float fixedUpdateTime = 0.5f;
+    
     [Tooltip("Should the platforms use fixed update")]
     public bool platformsUseFixedUpdate = false;
     public static bool s_platformsUseFixedUpdate = false;
@@ -29,6 +32,13 @@ public class PhysicsManager : MonoBehaviour
     [Tooltip("Allow physics time to slow down instead of becoming unstable")]
     public bool allowSlowDown = true;
     
+    private float deltaTime = 0.0f;
+
+    public float DeltaTime
+    {
+        get { return deltaTime; }
+    }
+    
     void Awake() {
         
         // We need the physics to update every frame so that the physics time matches the game time
@@ -45,33 +55,68 @@ public class PhysicsManager : MonoBehaviour
         
     }
 
+    void Start() {
+        UpdateInterpolation();
+    }
+    
+    // If we are running the physics every frame we do not need to interpolate rigidbody motion
+    void UpdateInterpolation() {
+        RigidbodyInterpolation interpolation = RigidbodyInterpolation.None;
+        if (Physics.simulationMode == SimulationMode.FixedUpdate) {
+            interpolation = RigidbodyInterpolation.Interpolate;
+        }
+        
+        Rigidbody[] rigidBodies = FindObjectsByType<Rigidbody>();
+        foreach (Rigidbody rigidBody in rigidBodies) {
+            rigidBody.interpolation = interpolation;
+        }
+    }
+
     // Update is called once per frame
     void Update() {
+        
+        deltaTime = Time.deltaTime;
         
         s_platformsUseFixedUpdate = platformsUseFixedUpdate;
         s_characterUseFixedUpdate = characterUseFixedUpdate;
         s_simulationMode = simulationMode;
 
-        if (Physics.simulationMode != simulationMode) Physics.simulationMode = simulationMode;
+        if (Physics.simulationMode != simulationMode) {
+            Physics.simulationMode = simulationMode;
+            UpdateInterpolation();
+        }
 
-        if (simulationMode != SimulationMode.Script) return;
+        // If not using script update reset the delta time and return
+        if (simulationMode != SimulationMode.Script) {
+            Time.fixedDeltaTime = fixedUpdateTime;
+            return;
+        }
         
+        // only need to do this if the game is paused AND we are not updating physics AND we want to still use the physics system for something like menu raycasts.
         // Sync transforms
-        Physics.SyncTransforms();
+        //Physics.SyncTransforms();
         
         // If we go over the max timeStep divide the time steps evenly
         // this will be a more stable simulation but can also lower FPS even more
-        int timeSteps = Mathf.CeilToInt(Time.deltaTime / maxTimeStep);
+        int timeStepSlices = Mathf.CeilToInt(deltaTime / maxTimeStep);
         
         // Cap the maximum number of time slices
-        if (timeSteps > maxStepSlices) timeSteps = maxStepSlices;
-        float dTime = Time.deltaTime / timeSteps;
+        if (timeStepSlices > maxStepSlices) timeStepSlices = maxStepSlices;
+        float dTime = deltaTime / timeStepSlices;
         
         // Slow down time if the max time step is exceeded
         if (allowSlowDown) dTime = Mathf.Min(dTime, maxTimeStep);
-        for (int i = 0; i < timeSteps; i++) {
+        
+        // set the fixed delta time so fixed update scripts have access to it
+        Time.fixedDeltaTime = dTime; 
+        
+        // Simulate physics with time steps
+        for (int i = 0; i < timeStepSlices; i++) {
             Physics.Simulate(dTime);
         }
+        
+        // update the frame delta time to account for slowdown
+        deltaTime = dTime * timeStepSlices;
 
     }
 }
