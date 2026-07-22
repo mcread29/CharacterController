@@ -1,0 +1,10 @@
+{
+  "name": "com.mcread29.character-controller",
+  "version": "1.0.0",
+  "displayName": "Pretty Good Character Controller",
+  "description": "Rigidbody-based character controller for Unity.",
+  "unity": "6000.0",
+  "dependencies": {
+    "com.unity.inputsystem": "1.19.0"
+  }
+}

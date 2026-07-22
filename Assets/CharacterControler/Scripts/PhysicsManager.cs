@@ -66,7 +66,7 @@ public class PhysicsManager : MonoBehaviour
             interpolation = RigidbodyInterpolation.Interpolate;
         }
         
-        Rigidbody[] rigidBodies = FindObjectsByType<Rigidbody>();
+        Rigidbody[] rigidBodies = FindObjectsByType<Rigidbody>(FindObjectsSortMode.None);
         foreach (Rigidbody rigidBody in rigidBodies) {
             rigidBody.interpolation = interpolation;
         }

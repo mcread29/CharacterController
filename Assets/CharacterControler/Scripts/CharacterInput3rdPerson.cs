@@ -21,6 +21,9 @@ public class CharacterInput3rdPerson : MonoBehaviour
     }
 
     void OnEnable() {
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+
         inputCharacter.Enable();
 
         moveControl = inputCharacter.Character.Move;
@@ -37,6 +40,9 @@ public class CharacterInput3rdPerson : MonoBehaviour
     }
     
     void OnDisable() {
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+
         moveControl.Disable();
         lookControl.Disable();
         
@@ -59,6 +65,8 @@ public class CharacterInput3rdPerson : MonoBehaviour
     }
 
     void Update() {
+        UpdateCursorCapture();
+
         characterController.InputJump(jumpAction.WasPressedThisFrame(), jumpAction.IsPressed());
         characterController.InputMoveVector(GetWorldMoveVector());
 
@@ -68,6 +76,16 @@ public class CharacterInput3rdPerson : MonoBehaviour
         cameraFollow.InputLookVector(lookVector);
     }
     
+    private void UpdateCursorCapture() {
+        if (Keyboard.current?.escapeKey.wasPressedThisFrame == true) {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        } else if (Mouse.current?.leftButton.wasPressedThisFrame == true) {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
+    }
+
     private Vector2 GetMoveVector() {
         return moveControl.ReadValue<Vector2>();
     }

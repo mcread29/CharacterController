@@ -23,6 +23,9 @@ public class CharacterInput1stPerson : MonoBehaviour
     }
 
     void OnEnable() {
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+
         inputCharacter.Enable();
 
         moveControl = inputCharacter.Character.Move;
@@ -39,6 +42,9 @@ public class CharacterInput1stPerson : MonoBehaviour
     }
     
     void OnDisable() {
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+
         moveControl.Disable();
         lookControl.Disable();
         
@@ -61,6 +67,7 @@ public class CharacterInput1stPerson : MonoBehaviour
     }
 
     void Update() {
+        UpdateCursorCapture();
 
         Vector2 lookVector = lookControl.ReadValue<Vector2>();
         lookVector += mouseDelta.ReadValue<Vector2>() * 0.1f;
@@ -80,6 +87,16 @@ public class CharacterInput1stPerson : MonoBehaviour
 
     }
     
+    private void UpdateCursorCapture() {
+        if (Keyboard.current?.escapeKey.wasPressedThisFrame == true) {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        } else if (Mouse.current?.leftButton.wasPressedThisFrame == true) {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
+    }
+
     private Vector2 GetMoveVector() {
         return moveControl.ReadValue<Vector2>();
     }
